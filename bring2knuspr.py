@@ -34,11 +34,18 @@ def parse_args():
     parser.add_argument(
         "--env-file", default=".env", help="Path to .env file (default: .env)"
     )
+    mark_group = parser.add_mutually_exclusive_group()
+    mark_group.add_argument(
+        "-m", "--mark", action="store_true", help="Auto-mark items as bought in Bring!"
+    )
+    mark_group.add_argument(
+        "--no-mark", action="store_true", help="Skip marking items as bought"
+    )
     return parser.parse_args()
 
 
-def load_credentials(args):
-    """Load credentials with priority: CLI > env > .env file."""
+def load_config(args):
+    """Load config with priority: CLI > env > .env file."""
     if os.path.exists(args.env_file):
         load_dotenv(args.env_file)
 
@@ -51,7 +58,17 @@ def load_credentials(args):
         print("Provide via --email/--password, environment variables, or .env file.", file=sys.stderr)
         sys.exit(1)
 
-    return email, password, list_name
+    # Determine mark behavior: CLI flags take precedence over env
+    if args.mark:
+        mark_bought = "auto"
+    elif args.no_mark:
+        mark_bought = "skip"
+    else:
+        mark_bought = os.getenv("BRING_MARK_BOUGHT", "ask").lower()
+        if mark_bought not in ("auto", "skip", "ask"):
+            mark_bought = "ask"
+
+    return email, password, list_name, mark_bought
 
 
 def generate_knuspr_urls(items: list[str], separate: bool) -> list[str]:
@@ -130,7 +147,7 @@ async def select_list(bring: Bring, list_name: str | None):
 
 async def main():
     args = parse_args()
-    email, password, list_name = load_credentials(args)
+    email, password, list_name, mark_bought = load_config(args)
 
     async with aiohttp.ClientSession() as session:
         bring = Bring(session, email, password)
@@ -174,6 +191,17 @@ async def main():
             if prompt_yes_no("\nOpen in browser?", default=True):
                 for url in urls:
                     webbrowser.open(url)
+
+            should_mark = False
+            if mark_bought == "auto":
+                should_mark = True
+            elif mark_bought == "ask":
+                should_mark = prompt_yes_no("\nMark all items as bought in Bring!?", default=True)
+
+            if should_mark:
+                for item in purchase_items:
+                    await bring.complete_item(list_uuid, item.itemId)
+                print(f"Marked {len(purchase_items)} items as bought.")
 
 
 if __name__ == "__main__":

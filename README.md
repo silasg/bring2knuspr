@@ -18,6 +18,7 @@ Create a `.env` file with your Bring! credentials:
 BRING_EMAIL=your@email.com
 BRING_PASSWORD=yourpassword
 BRING_LIST=Optional List Name
+BRING_MARK_BOUGHT=ask  # auto, skip, or ask (default)
 ```
 
 ## Usage
@@ -45,4 +46,6 @@ python bring2knuspr.py --dry-run
 | `--list` | `-l` | List name or UUID |
 | `--separate` | `-s` | Search items individually |
 | `--dry-run` | `-d` | Print URLs without opening browser |
+| `--mark` | `-m` | Auto-mark items as bought in Bring! |
+| `--no-mark` | - | Skip marking items as bought |
 | `--env-file` | - | Path to .env file (default: `.env`) |
