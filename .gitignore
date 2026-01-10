@@ -1,0 +1,18 @@
+# Credentials
+.env
+
+# Python virtual environment
+venv/
+bin/
+lib/
+include/
+pyvenv.cfg
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+.vscode/
