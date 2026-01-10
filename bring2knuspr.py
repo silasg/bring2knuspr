@@ -79,10 +79,10 @@ def prompt_yes_no(message: str, default: bool = True) -> bool:
 
 def prompt_search_mode(item_count: int) -> bool:
     """Prompt user for search mode. Returns True for separate searches."""
+    print(f"\nSearch all {item_count} items together or separately?")
+    print("(Separate searches give better results but open multiple browser tabs)")
     try:
-        response = input(
-            f"Search all {item_count} items together or separately? [t/s]: "
-        ).strip().lower()
+        response = input("[T/s]: ").strip().lower()
     except (EOFError, KeyboardInterrupt):
         print()
         return False
@@ -155,7 +155,7 @@ async def main():
 
         item_names = [item.itemId for item in purchase_items]
 
-        print(f"Found {len(item_names)} items: {', '.join(item_names)}")
+        print(f"Found {len(item_names)} items:\n{', '.join(item_names)}")
 
         if args.separate:
             separate = True
