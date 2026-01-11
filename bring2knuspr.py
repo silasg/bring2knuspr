@@ -199,9 +199,11 @@ async def main():
                 should_mark = prompt_yes_no("\nMark all items as bought in Bring!?", default=True)
 
             if should_mark:
-                for item in purchase_items:
+                total = len(purchase_items)
+                for i, item in enumerate(purchase_items, 1):
+                    print(f"\rMarking items as bought: {i}/{total}", end="", flush=True)
                     await bring.complete_item(list_uuid, item.itemId)
-                print(f"Marked {len(purchase_items)} items as bought.")
+                print(f"\rMarked {total} items as bought.        ")
 
 
 if __name__ == "__main__":
