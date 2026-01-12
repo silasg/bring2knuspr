@@ -18,11 +18,33 @@ from dotenv import load_dotenv
 KNUSPR_SEARCH_URL = "https://www.knuspr.de/suche?q={query}&companyId=1"
 
 
-def format_item_name(item) -> str:
-    """Format item name with specification in brackets if present."""
+def format_item_for_search(item) -> str:
+    """Format item name with specification for search queries."""
     if item.specification:
         return f"{item.itemId} ({item.specification})"
     return item.itemId
+
+
+def format_attributes(item) -> str:
+    """Format item attributes as emoji labels."""
+    labels = []
+    for attr in item.attributes:
+        if attr.content.urgent:
+            labels.append("🔥 urgent")
+        if attr.content.discounted:
+            labels.append("💰 on sale")
+        if attr.content.convenient:
+            labels.append("🍀 convenient")
+    return f" [{', '.join(labels)}]" if labels else ""
+
+
+def format_item_for_display(item) -> str:
+    """Format item name with specification and attributes for display."""
+    name = item.itemId
+    if item.specification:
+        name = f"{name} ({item.specification})"
+    name += format_attributes(item)
+    return name
 
 
 def parse_args():
@@ -177,18 +199,19 @@ async def main():
             print(f"No active items in list '{selected_list.name}'.")
             sys.exit(0)
 
-        item_names = [format_item_name(item) for item in purchase_items]
+        display_names = [format_item_for_display(item) for item in purchase_items]
+        search_names = [format_item_for_search(item) for item in purchase_items]
 
-        print(f"Found {len(item_names)} items:\n{', '.join(item_names)}")
+        print(f"Found {len(display_names)} items:\n{', '.join(display_names)}")
 
         if args.separate:
             separate = True
-        elif args.dry_run or len(item_names) <= 1:
+        elif args.dry_run or len(display_names) <= 1:
             separate = False
         else:
-            separate = prompt_search_mode(len(item_names))
+            separate = prompt_search_mode(len(display_names))
 
-        urls = generate_knuspr_urls(item_names, separate)
+        urls = generate_knuspr_urls(search_names, separate)
 
         print("\nKnuspr search URL(s):")
         for url in urls:
