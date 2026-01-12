@@ -18,6 +18,13 @@ from dotenv import load_dotenv
 KNUSPR_SEARCH_URL = "https://www.knuspr.de/suche?q={query}&companyId=1"
 
 
+def format_item_name(item) -> str:
+    """Format item name with specification in brackets if present."""
+    if item.specification:
+        return f"{item.itemId} ({item.specification})"
+    return item.itemId
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Fetch shopping list from Bring! and search on Knuspr."
@@ -170,13 +177,13 @@ async def main():
             print(f"No active items in list '{selected_list.name}'.")
             sys.exit(0)
 
-        item_names = [item.itemId for item in purchase_items]
+        item_names = [format_item_name(item) for item in purchase_items]
 
         print(f"Found {len(item_names)} items:\n{', '.join(item_names)}")
 
         if args.separate:
             separate = True
-        elif args.dry_run or len(item_names) <= 3:
+        elif args.dry_run or len(item_names) <= 1:
             separate = False
         else:
             separate = prompt_search_mode(len(item_names))
