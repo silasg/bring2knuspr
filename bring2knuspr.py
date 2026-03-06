@@ -7,6 +7,8 @@ import argparse
 import asyncio
 import os
 import sys
+import termios
+import tty
 import webbrowser
 from urllib.parse import quote
 
@@ -136,6 +138,78 @@ def prompt_search_mode(item_count: int) -> bool:
     return response == "s"
 
 
+def read_key() -> str:
+    """Read a single keypress from stdin in raw mode."""
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+        if ch == "\x1b":
+            seq = sys.stdin.read(1)
+            if seq == "[":
+                code = sys.stdin.read(1)
+                if code == "A":
+                    return "up"
+                if code == "B":
+                    return "down"
+            return "esc"
+        return ch
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+
+def interactive_mark_checklist(display_names: list[str]) -> list[int] | None:
+    """Show interactive checklist. Returns selected indices or None on cancel."""
+    checked = [True] * len(display_names)
+    cursor = 0
+    total = len(display_names)
+    header = "Mark items as bought in Bring!:\n"
+    footer = (
+        "\n  j/↓ down  k/↑ up  space toggle  a all  n none  i invert"
+        "\n  enter confirm  q/esc cancel"
+    )
+    # total lines = 1 (header) + total items + 1 (blank) + 2 (footer)
+    output_lines = 1 + total + 1 + 2
+
+    def render(first: bool = False):
+        if not first:
+            sys.stdout.write(f"\x1b[{output_lines}A")
+        sys.stdout.write(header)
+        for idx, name in enumerate(display_names):
+            mark = "x" if checked[idx] else " "
+            arrow = ">" if idx == cursor else " "
+            sys.stdout.write(f"\x1b[2K  {arrow} [{mark}] {name}\n")
+        sys.stdout.write(f"\x1b[2K{footer}\n")
+        sys.stdout.flush()
+
+    render(first=True)
+
+    while True:
+        key = read_key()
+
+        if key in ("q", "esc", "\x03"):  # q, Esc, Ctrl-C
+            return None
+        elif key in ("\r", "\n"):  # Enter
+            return [i for i, c in enumerate(checked) if c]
+        elif key in ("j", "down"):
+            cursor = min(cursor + 1, total - 1)
+        elif key in ("k", "up"):
+            cursor = max(cursor - 1, 0)
+        elif key == " ":
+            checked[cursor] = not checked[cursor]
+        elif key == "a":
+            checked = [True] * total
+        elif key == "n":
+            checked = [False] * total
+        elif key == "i":
+            checked = [not c for c in checked]
+        else:
+            continue
+
+        render()
+
+
 async def select_list(bring: Bring, list_name: str | None):
     """Select a shopping list, interactively if needed."""
     lists_response = await bring.load_lists()
@@ -222,18 +296,25 @@ async def main():
                 for url in urls:
                     webbrowser.open(url)
 
-            should_mark = False
             if mark_bought == "auto":
-                should_mark = True
+                items_to_mark = list(range(len(purchase_items)))
             elif mark_bought == "ask":
-                should_mark = prompt_yes_no("\nMark all items as bought in Bring!?", default=True)
+                print()
+                items_to_mark = interactive_mark_checklist(display_names)
+            else:
+                items_to_mark = None
 
-            if should_mark:
-                total = len(purchase_items)
-                for i, item in enumerate(purchase_items, 1):
+            if items_to_mark is None:
+                print("Skipped marking items.")
+            elif items_to_mark:
+                total = len(items_to_mark)
+                for i, idx in enumerate(items_to_mark, 1):
+                    item = purchase_items[idx]
                     print(f"\rMarking items as bought: {i}/{total}", end="", flush=True)
                     await bring.complete_item(list_uuid, item.itemId)
-                print(f"\rMarked {total} items as bought.        ")
+                print(f"\rMarked {total} item(s) as bought.        ")
+            else:
+                print("No items selected.")
 
 
 if __name__ == "__main__":
