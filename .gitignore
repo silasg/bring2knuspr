@@ -1,5 +1,6 @@
-# Credentials
+# Credentials and personal config
 .env
+knuspr_mappings.txt
 
 # Python virtual environment
 venv/

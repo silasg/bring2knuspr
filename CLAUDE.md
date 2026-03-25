@@ -12,9 +12,10 @@ Single-file Python script to fetch Bring! shopping list items and search on Knus
 ## Project Structure
 
 ```
-bring2knuspr.py    # Main script (single file)
-requirements.txt   # Python dependencies
-.env               # Credentials (not in git)
+bring2knuspr.py        # Main script (single file)
+requirements.txt       # Python dependencies
+.env                   # Credentials (not in git)
+knuspr_mappings.txt    # Item name → search term mappings (not in git)
 ```
 
 ## Development

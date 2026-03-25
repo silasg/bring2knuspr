@@ -20,11 +20,29 @@ from dotenv import load_dotenv
 KNUSPR_SEARCH_URL = "https://www.knuspr.de/suche?q={query}&companyId=1"
 
 
-def format_item_for_search(item) -> str:
+def load_mappings(path: str) -> dict[str, str]:
+    """Load item name mappings from file. Returns lowercase key → value dict."""
+    if not os.path.exists(path):
+        return {}
+    mappings = {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            mappings[key.strip().lower()] = value.strip()
+    return mappings
+
+
+def format_item_for_search(item, mappings: dict[str, str]) -> str:
     """Format item name with specification for search queries."""
+    name = mappings.get(item.itemId.lower(), item.itemId)
     if item.specification:
-        return f"{item.itemId} ({item.specification})"
-    return item.itemId
+        return f"{name} ({item.specification})"
+    return name
 
 
 def format_attributes(item) -> str:
@@ -40,11 +58,14 @@ def format_attributes(item) -> str:
     return f" [{', '.join(labels)}]" if labels else ""
 
 
-def format_item_for_display(item) -> str:
+def format_item_for_display(item, mappings: dict[str, str]) -> str:
     """Format item name with specification and attributes for display."""
     name = item.itemId
     if item.specification:
         name = f"{name} ({item.specification})"
+    mapped = mappings.get(item.itemId.lower())
+    if mapped:
+        name = f"{name} → {mapped}"
     name += format_attributes(item)
     return name
 
@@ -72,6 +93,7 @@ def parse_args():
     mark_group.add_argument(
         "--no-mark", action="store_true", help="Skip marking items as bought"
     )
+    parser.add_argument("--mappings", help="Path to item mapping file")
     return parser.parse_args()
 
 
@@ -99,7 +121,12 @@ def load_config(args):
         if mark_bought not in ("auto", "skip", "ask"):
             mark_bought = "ask"
 
-    return email, password, list_name, mark_bought
+    mappings_file = args.mappings or os.getenv("KNUSPR_MAPPINGS", "knuspr_mappings.txt")
+    if args.mappings and not os.path.exists(mappings_file):
+        print(f"Error: Mappings file not found: {mappings_file}", file=sys.stderr)
+        sys.exit(1)
+
+    return email, password, list_name, mark_bought, mappings_file
 
 
 def generate_knuspr_urls(items: list[str], separate: bool) -> list[str]:
@@ -250,7 +277,8 @@ async def select_list(bring: Bring, list_name: str | None):
 
 async def main():
     args = parse_args()
-    email, password, list_name, mark_bought = load_config(args)
+    email, password, list_name, mark_bought, mappings_file = load_config(args)
+    mappings = load_mappings(mappings_file)
 
     async with aiohttp.ClientSession() as session:
         bring = Bring(session, email, password)
@@ -273,8 +301,8 @@ async def main():
             print(f"No active items in list '{selected_list.name}'.")
             sys.exit(0)
 
-        display_names = [format_item_for_display(item) for item in purchase_items]
-        search_names = [format_item_for_search(item) for item in purchase_items]
+        display_names = [format_item_for_display(item, mappings) for item in purchase_items]
+        search_names = [format_item_for_search(item, mappings) for item in purchase_items]
 
         print(f"Found {len(display_names)} items:\n{', '.join(display_names)}")
 
