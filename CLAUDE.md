@@ -21,8 +21,8 @@ knuspr_mappings.txt    # Item name → search term mappings (not in git)
 ## Development
 
 ```bash
-source venv/bin/activate
-python bring2knuspr.py --dry-run
+mise install
+mise run start -- --dry-run
 ```
 
 ## Notes

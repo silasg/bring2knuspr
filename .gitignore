@@ -3,16 +3,13 @@
 knuspr_mappings.txt
 
 # Python virtual environment
-venv/
-bin/
-lib/
-include/
-pyvenv.cfg
+.venv/
 
-# Python cache
+# Python cache and build metadata
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
 
 # IDE
 .idea/

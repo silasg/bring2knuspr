@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bring2knuspr"
+version = "0.1.0"
+description = "Fetch Bring! shopping list items and search for them on Knuspr"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "aiohttp",
+    "bring-api",
+    "python-dotenv",
+]
+
+[tool.setuptools]
+py-modules = ["bring2knuspr"]

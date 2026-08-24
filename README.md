@@ -4,11 +4,14 @@ Fetch shopping list items from [Bring!](https://www.getbring.com/) and search th
 
 ## Setup
 
+Install [mise](https://mise.jdx.dev/) and run:
+
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+mise install
+mise run install
 ```
+
+The install task creates `.venv` as needed and installs the dependencies declared in `pyproject.toml`.
 
 ## Configuration
 
@@ -43,16 +46,16 @@ Configure the mapping file path via `--mappings`, `KNUSPR_MAPPINGS` env var, or 
 
 ```bash
 # Interactive mode
-python bring2knuspr.py
+mise run start
 
 # Specify list via CLI
-python bring2knuspr.py -l "Shopping"
+mise run start -- -l "Shopping"
 
 # Search items separately
-python bring2knuspr.py --separate
+mise run start -- --separate
 
 # Dry run (print URLs without opening browser)
-python bring2knuspr.py --dry-run
+mise run start -- --dry-run
 ```
 
 ## Options

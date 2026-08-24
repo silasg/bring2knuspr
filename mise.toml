@@ -1,0 +1,14 @@
+[tools]
+python = "3.14.7"
+
+[tasks.install]
+description = "Create the virtualenv and install dependencies"
+run = """
+python -m venv .venv
+.venv/bin/python -m pip install --editable .
+"""
+
+[tasks.start]
+description = "Run bring2knuspr"
+depends = ["install"]
+run = ".venv/bin/python bring2knuspr.py"

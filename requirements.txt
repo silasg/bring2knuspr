@@ -1,3 +1,0 @@
-bring-api
-python-dotenv
-aiohttp
