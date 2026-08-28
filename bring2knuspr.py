@@ -81,7 +81,10 @@ def parse_args():
         "-s", "--separate", action="store_true", help="Search items individually"
     )
     parser.add_argument(
-        "-d", "--dry-run", action="store_true", help="Print URLs without opening browser"
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="Print URLs without opening browser",
     )
     parser.add_argument(
         "--env-file", default=".env", help="Path to .env file (default: .env)"
@@ -108,7 +111,10 @@ def load_config(args):
 
     if not email or not password:
         print("Error: Missing credentials.", file=sys.stderr)
-        print("Provide via --email/--password, environment variables, or .env file.", file=sys.stderr)
+        print(
+            "Provide via --email/--password, environment variables, or .env file.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Determine mark behavior: CLI flags take precedence over env
@@ -157,12 +163,12 @@ def prompt_search_mode(item_count: int) -> bool:
     print(f"\nSearch all {item_count} items together or separately?")
     print("(Separate searches give better results but open multiple browser tabs)")
     try:
-        response = input("[T/s]: ").strip().lower()
+        response = input("[t/S]: ").strip().lower()
     except (EOFError, KeyboardInterrupt):
         print()
         return False
 
-    return response == "s"
+    return response != "t"
 
 
 def read_key() -> str:
@@ -301,8 +307,12 @@ async def main():
             print(f"No active items in list '{selected_list.name}'.")
             sys.exit(0)
 
-        display_names = [format_item_for_display(item, mappings) for item in purchase_items]
-        search_names = [format_item_for_search(item, mappings) for item in purchase_items]
+        display_names = [
+            format_item_for_display(item, mappings) for item in purchase_items
+        ]
+        search_names = [
+            format_item_for_search(item, mappings) for item in purchase_items
+        ]
 
         print(f"Found {len(display_names)} items:\n{', '.join(display_names)}")
 
